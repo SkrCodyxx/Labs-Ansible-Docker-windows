@@ -1,0 +1,65 @@
+# version: '3.8'
+version: '3.8'
+
+services:
+  WinS2019:
+    image: dockurr/windows
+    container_name: winS2019
+    environment:
+      - USERNAME=winuser
+      - PASSWORD=abc.123
+      - LANGUAGE=English
+      - VERSION=2019
+      - RAM_SIZE=3G
+      - REGION=en-CA
+      - KEYBOARD=en-US
+      - BOOT_PATH=/boot_data
+    devices:
+      - /dev/kvm
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - "8006:8006"
+      - "3389:3389/tcp"
+      - "3389:3389/udp"
+    stop_grace_period: 2m
+    restart: on-failure
+    volumes:
+      - winS2019_data:/storage
+    networks:
+      my_network:
+        ipv4_address: 192.168.2.10  
+
+  ubuntu_ansi:
+    image: ubuntu:latest
+    container_name: ubuntu_master
+    expose:
+      - "22"
+    environment:
+      - ROOT_PASSWORD=root
+    tty: true
+    command: >
+      /bin/bash -c "apt-get update &&
+      apt-get install -y openssh-server &&
+      mkdir -p /var/run/sshd &&
+      echo 'root:root' | chpasswd &&
+      service ssh start &&
+      tail -f /dev/null"
+    volumes:
+      - ubmaster_data:/data
+    networks:
+      my_network:
+        ipv4_address: 192.168.2.11
+
+networks:
+  my_network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 192.168.2.0/24
+
+volumes:
+  winS2019_data:
+    driver: local
+  ubmaster_data:
+    driver: local
